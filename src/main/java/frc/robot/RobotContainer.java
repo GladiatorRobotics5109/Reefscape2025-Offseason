@@ -16,6 +16,7 @@ package frc.robot;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.*;
+import frc.robot.subsystems.superstructure.elevator.ElevatorIOSim;
 import frc.robot.subsystems.superstructure.elevator.ElevatorSubsystem;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
@@ -60,6 +62,8 @@ public class RobotContainer {
 
                 break;
             case SIM:
+                DriverStation.silenceJoystickConnectionWarning(true);
+
                 // Sim robot, instantiate physics sim IO implementations
                 m_drive = new DriveSubsystem(
                     new GyroIO() {},
@@ -68,6 +72,8 @@ public class RobotContainer {
                     new ModuleIOSim(TunerConstants.BackLeft),
                     new ModuleIOSim(TunerConstants.BackRight)
                 );
+
+                m_elevator = new ElevatorSubsystem(new ElevatorIOSim());
 
                 break;
             default:
@@ -160,5 +166,8 @@ public class RobotContainer {
      *
      * @return the command to run in autonomous
      */
-    public Command getAutonomousCommand() { return m_autoChooser.get(); }
+    public Command getAutonomousCommand() {
+        //        return m_autoChooser.get();
+        return Commands.runOnce(() -> m_elevator.setDesiredPositionRad(25), m_elevator);
+    }
 }

@@ -34,22 +34,32 @@ public final class Constants {
         REPLAY
     }
 
-    public static final class ElevatorConstants {
-        public static final String kLogPath = "Subsystems/Elevator";
+    public static final class DriveConstants {
+        public static final String kLogPath = "Subsystems/Drive";
+    }
 
-        public static final double kP = 0.0;
+    public static final class ElevatorConstants {
+        public static final String kLogPath = "ElevatorSubsystem";
+
+        public static final double kP = 0.00;
         public static final double kI = 0.0;
         public static final double kD = 0.0;
 
-        public static final double kS = 0.0;
-        public static final double kG = 0.0;
-        public static final double kV = 0.0;
+        public static final double kS = 0.1;
+        public static final double kV = 0.55;
         public static final double kA = 0.0;
-
-        public static final double kMaxVelocityRadPerSec = 0.0;
-        public static final double kMaxAccelerationRadPerSecPerSec = 0.0;
+        public static final double kG = 0.355;
 
         public static final double kGearRatio = 12;
         public static final double kSprocketRadiusMeters = Conversions.inchesToMeters(0.819);
+
+        public static final double kMaxVelocityRadPerSec = 24.2;
+        public static final double kMaxAccelerationRadPerSecPerSec = Conversions.elevatorMetersToRadians(1.5);
+
+        public static final double kMinPositionRad = -0.03;
+        public static final double kMaxPositionRad = 30.05;
+
+        public static final double kMinHeightMeters = Conversions.elevatorRadiansToMeters(kMinPositionRad);
+        public static final double kMaxHeightMeters = Conversions.elevatorRadiansToMeters(kMaxPositionRad);
     }
 }

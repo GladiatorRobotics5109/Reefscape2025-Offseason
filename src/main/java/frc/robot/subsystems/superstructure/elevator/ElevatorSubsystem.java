@@ -3,10 +3,10 @@ package frc.robot.subsystems.superstructure.elevator;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ElevatorConstants;
-import frc.robot.subsystems.superstructure.elevator.ElevatorIO.ElevatorIOInputs;
 import frc.robot.util.Conversions;
 import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -14,7 +14,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class ElevatorSubsystem extends SubsystemBase {
     private final ElevatorIO m_io;
-    private final ElevatorIOInputs m_inputs = new ElevatorIOInputsAutoLogged();
+    private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
 
     @Getter
     @AutoLogOutput(key = ElevatorConstants.kLogPath + "/DesiredPositionRad")
@@ -42,7 +42,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_ff = new ElevatorFeedforward(
             ElevatorConstants.kS,
             ElevatorConstants.kG,
-            ElevatorConstants.kS,
+            ElevatorConstants.kV,
             ElevatorConstants.kA
         );
     }
@@ -60,19 +60,21 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public void setDesiredPositionMeters(double positionMeters) {
-        setDesiredPositionRad(Conversions.elevatorPositionMetersToRadians(positionMeters));
+        setDesiredPositionRad(Conversions.elevatorMetersToRadians(positionMeters));
     }
 
     @AutoLogOutput
     public double getCurrentPositionRad() { return m_inputs.positionRad; }
 
     @AutoLogOutput
-    public double getCurrentPositionMeters() {
-        return Conversions.elevatorPositionRadiansToMeters(getCurrentPositionRad());
-    }
+    public double getCurrentPositionMeters() { return Conversions.elevatorRadiansToMeters(getCurrentPositionRad()); }
 
     @Override
     public void periodic() {
+        m_io.periodic();
+        m_io.updateInputs(m_inputs);
+        Logger.processInputs(ElevatorConstants.kLogPath, m_inputs);
+
         if (DriverStation.isDisabled()) {
             stop();
         }
@@ -81,10 +83,13 @@ public class ElevatorSubsystem extends SubsystemBase {
                 m_inputs.positionRad,
                 m_desiredPositionRad
             );
-            double ff = m_ff.calculate(m_pid.getSetpoint().velocity);
+            State setpoint = m_pid.getSetpoint();
+            Logger.recordOutput(ElevatorConstants.kLogPath + "/Profile/DesiredVelocity", setpoint.velocity);
+            Logger.recordOutput(ElevatorConstants.kLogPath + "/Profile/DesiredPosition", setpoint.position);
+            double ff = m_ff.calculate(setpoint.velocity);
             double desiredVoltage = pid + ff;
 
-            Logger.recordOutput(ElevatorConstants.kLogPath + "/DesiredVoltage", desiredVoltage);
+            Logger.recordOutput(ElevatorConstants.kLogPath + "/Profile/DesiredVoltage", desiredVoltage);
             m_io.setVoltage(desiredVoltage);
         }
     }

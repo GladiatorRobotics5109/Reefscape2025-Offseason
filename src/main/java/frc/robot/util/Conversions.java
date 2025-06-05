@@ -8,11 +8,11 @@ public class Conversions {
 
     public static double metersToRadians(double meters, double radiusMeters) { return meters / radiusMeters; }
 
-    public static double elevatorPositionRadiansToMeters(double positionRad) {
+    public static double elevatorRadiansToMeters(double positionRad) {
         return radiansToMeters(positionRad, Constants.ElevatorConstants.kSprocketRadiusMeters) * 2;
     }
 
-    public static double elevatorPositionMetersToRadians(double meters) {
+    public static double elevatorMetersToRadians(double meters) {
         return metersToRadians(meters, Constants.ElevatorConstants.kSprocketRadiusMeters) / 2;
     }
 
