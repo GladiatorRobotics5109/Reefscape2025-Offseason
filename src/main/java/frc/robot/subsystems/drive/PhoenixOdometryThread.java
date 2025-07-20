@@ -145,9 +145,7 @@ public class PhoenixOdometryThread extends Thread {
                 //     FPGA timestamps, this solution is imperfect but close
                 double timestamp = RobotController.getFPGATime() / 1e6;
                 double totalLatency = 0.0;
-                for (
-                    BaseStatusSignal signal : phoenixSignals
-                ) {
+                for (BaseStatusSignal signal : phoenixSignals) {
                     totalLatency += signal.getTimestamp().getLatency();
                 }
                 if (phoenixSignals.length > 0) {
@@ -155,19 +153,13 @@ public class PhoenixOdometryThread extends Thread {
                 }
 
                 // Add new samples to queues
-                for (
-                    int i = 0; i < phoenixSignals.length; i++
-                ) {
+                for (int i = 0; i < phoenixSignals.length; i++) {
                     phoenixQueues.get(i).offer(phoenixSignals[i].getValueAsDouble());
                 }
-                for (
-                    int i = 0; i < genericSignals.size(); i++
-                ) {
+                for (int i = 0; i < genericSignals.size(); i++) {
                     genericQueues.get(i).offer(genericSignals.get(i).getAsDouble());
                 }
-                for (
-                    int i = 0; i < timestampQueues.size(); i++
-                ) {
+                for (int i = 0; i < timestampQueues.size(); i++) {
                     timestampQueues.get(i).offer(timestamp);
                 }
             }

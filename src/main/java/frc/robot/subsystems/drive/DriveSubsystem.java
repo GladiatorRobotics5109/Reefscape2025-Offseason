@@ -47,6 +47,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
+import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.Mode;
 import frc.robot.generated.TunerConstants;
 import frc.robot.util.LocalADStarAK;
@@ -185,18 +186,14 @@ public class DriveSubsystem extends SubsystemBase {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
         Logger.processInputs("Drive/Gyro", gyroInputs);
-        for (
-            var module : modules
-        ) {
+        for (var module : modules) {
             module.periodic();
         }
         odometryLock.unlock();
 
         // Stop moving when disabled
         if (DriverStation.isDisabled()) {
-            for (
-                var module : modules
-            ) {
+            for (var module : modules) {
                 module.stop();
             }
         }
@@ -210,15 +207,11 @@ public class DriveSubsystem extends SubsystemBase {
         // Update odometry
         double[] sampleTimestamps = modules[0].getOdometryTimestamps(); // All signals are sampled together
         int sampleCount = sampleTimestamps.length;
-        for (
-            int i = 0; i < sampleCount; i++
-        ) {
+        for (int i = 0; i < sampleCount; i++) {
             // Read wheel positions and deltas from each module
             SwerveModulePosition[] modulePositions = new SwerveModulePosition[4];
             SwerveModulePosition[] moduleDeltas = new SwerveModulePosition[4];
-            for (
-                int moduleIndex = 0; moduleIndex < 4; moduleIndex++
-            ) {
+            for (int moduleIndex = 0; moduleIndex < 4; moduleIndex++) {
                 modulePositions[moduleIndex] = modules[moduleIndex].getOdometryPositions()[i];
                 moduleDeltas[moduleIndex] = new SwerveModulePosition(
                     modulePositions[moduleIndex].distanceMeters
@@ -263,9 +256,7 @@ public class DriveSubsystem extends SubsystemBase {
         Logger.recordOutput("SwerveChassisSpeeds/Setpoints", discreteSpeeds);
 
         // Send setpoints to modules
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             modules[i].runSetpoint(setpointStates[i]);
         }
 
@@ -275,9 +266,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     /** Runs the drive in a straight line with the specified drive output. */
     public void runCharacterization(double output) {
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             modules[i].runCharacterization(output);
         }
     }
@@ -293,9 +282,7 @@ public class DriveSubsystem extends SubsystemBase {
      */
     public void stopWithX() {
         Rotation2d[] headings = new Rotation2d[4];
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             headings[i] = getModuleTranslations()[i].getAngle();
         }
         kinematics.resetHeadings(headings);
@@ -320,9 +307,7 @@ public class DriveSubsystem extends SubsystemBase {
     )
     private SwerveModuleState[] getModuleStates() {
         SwerveModuleState[] states = new SwerveModuleState[4];
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             states[i] = modules[i].getState();
         }
         return states;
@@ -331,9 +316,7 @@ public class DriveSubsystem extends SubsystemBase {
     /** Returns the module positions (turn angles and drive positions) for all of the modules. */
     private SwerveModulePosition[] getModulePositions() {
         SwerveModulePosition[] states = new SwerveModulePosition[4];
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             states[i] = modules[i].getPosition();
         }
         return states;
@@ -348,9 +331,7 @@ public class DriveSubsystem extends SubsystemBase {
     /** Returns the position of each module in radians. */
     public double[] getWheelRadiusCharacterizationPositions() {
         double[] values = new double[4];
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             values[i] = modules[i].getWheelRadiusCharacterizationPosition();
         }
         return values;
@@ -359,18 +340,14 @@ public class DriveSubsystem extends SubsystemBase {
     /** Returns the average velocity of the modules in rotations/sec (Phoenix native units). */
     public double getFFCharacterizationVelocity() {
         double output = 0.0;
-        for (
-            int i = 0; i < 4; i++
-        ) {
+        for (int i = 0; i < 4; i++) {
             output += modules[i].getFFCharacterizationVelocity() / 4.0;
         }
         return output;
     }
 
     /** Returns the current odometry pose. */
-    @AutoLogOutput(
-        key = "Odometry/Robot"
-    )
+    @AutoLogOutput(key = DriveConstants.kLogPath + "/CurrentPose")
     public Pose2d getPose() { return poseEstimator.getEstimatedPosition(); }
 
     /** Returns the current odometry rotation. */

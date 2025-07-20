@@ -15,6 +15,9 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.util.Conversions;
+import frc.robot.util.FieldConstants.Reef.ReefLevel;
+
+import java.util.HashMap;
 
 /**
  * This class defines the runtime mode used by AdvantageKit. The mode is always "real" when running
@@ -24,6 +27,14 @@ import frc.robot.util.Conversions;
 public final class Constants {
     public static final Mode kSimMode = Mode.SIM;
     public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
+
+    public static final class DriveTeamConstants {
+        public static final int kDriverPort = 0;
+        public static final int kOperatorPort = 1;
+
+        public static final double kAutoScoreStartStopThreashold = 0.125;
+        public static final double kAutoScoreSideSelectionThreshold = 0.125;
+    }
 
     public static enum Mode {
         /** Running on a real robot. */
@@ -35,13 +46,34 @@ public final class Constants {
     }
 
     public static final class DriveConstants {
+        public static final String kIOLogPath = "DriveIO";
         public static final String kLogPath = "Subsystems/Drive";
+
+        public static final double kAutoScoreMaxDistMeters = 1.75;
+        public static final double kAutoScorePoseOffsetMeters = Conversions.inchesToMeters(15);
+
+        public static final class DriveToPoseConstants {
+            public static final double kTranslationP = 5.0;
+            public static final double kTranslationI = 0.0;
+            public static final double kTranslationD = 0.0;
+            public static final double kTranslationMaxVel = 2.0;
+            public static final double kTranslationAccel = 1.0;
+            public static final double kTranslationToleranceMeters = Conversions.inchesToMeters(0.5);
+
+            public static final double kRotationP = 5.0;
+            public static final double kRotationI = 0.0;
+            public static final double kRotationD = 0.0;
+            public static final double kRotationMaxVel = 6.0;
+            public static final double kRotationAccel = 2.0;
+            public static final double kRotationToleranceRad = Conversions.degreesToRadians(0.5);
+        }
     }
 
     public static final class ElevatorConstants {
-        public static final String kLogPath = "ElevatorSubsystem";
+        public static final String kIOLogPath = "ElevatorIO";
+        public static final String kLogPath = "Subsystems/Elevator";
 
-        public static final double kP = 0.00;
+        public static final double kP = 0.0;
         public static final double kI = 0.0;
         public static final double kD = 0.0;
 
@@ -61,5 +93,44 @@ public final class Constants {
 
         public static final double kMinHeightMeters = Conversions.elevatorRadiansToMeters(kMinPositionRad);
         public static final double kMaxHeightMeters = Conversions.elevatorRadiansToMeters(kMaxPositionRad);
+
+        public static final double kSupplyCurrentLimit = 40.0;
+
+        public static final int kMotorPort = 40;
+        public static final boolean kInvertMotor = true;
+        public static final int kFollowerPort = 41;
+
+        public static final HashMap<ReefLevel, Double> kHeightOffsets = new HashMap<>();
+        static {
+            kHeightOffsets.put(ReefLevel.L1, 0.0);
+            kHeightOffsets.put(ReefLevel.L2, 0.0);
+            kHeightOffsets.put(ReefLevel.L3, 0.0);
+            kHeightOffsets.put(ReefLevel.L4, 0.0);
+        }
+
+        public static final double kPositionToleranceRad = Conversions.elevatorMetersToRadians(
+            Conversions.inchesToMeters(1)
+        );
+    }
+
+    public static final class DispenserConstants {
+        public static final String kIOLogPath = "DispenserIO";
+
+        public static final double kGearRatio = 12;
+
+        public static final boolean kInvertMotor = true;
+
+        public static final int kLeftPort = 51;
+        public static final int kRightPort = 50;
+
+        public static final int kSensorPort = 1;
+        public static final int kSensorLeadingPort = 2;
+
+        public static final double kSupplyCurrentLimit = 40;
+
+        public static final double kScoreVoltage = 5;
+        public static final double kIntakeVoltage = 6;
+        public static final double kIntakeSlowVoltage = 5;
+        public static final double kIntakeSlowSlowVoltage = -1.75;
     }
 }

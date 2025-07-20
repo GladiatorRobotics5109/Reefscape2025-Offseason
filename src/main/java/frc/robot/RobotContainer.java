@@ -14,21 +14,41 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.*;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.ElevatorCommands;
+import frc.robot.commands.RobotCommands;
+import frc.robot.commands.SuperstructureCommands;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.drive.*;
+import frc.robot.subsystems.superstructure.dispenser.DispenserIO;
+import frc.robot.subsystems.superstructure.dispenser.DispenserIOSparkMax;
+import frc.robot.subsystems.superstructure.dispenser.DispenserSubsystem;
+import frc.robot.subsystems.superstructure.dispenser.sensors.DispenserSensorsIO;
+import frc.robot.subsystems.superstructure.dispenser.sensors.DispenserSensorsIODigitalInput;
+import frc.robot.subsystems.superstructure.elevator.ElevatorIO;
 import frc.robot.subsystems.superstructure.elevator.ElevatorIOSim;
+import frc.robot.subsystems.superstructure.elevator.ElevatorIOSparkMax;
 import frc.robot.subsystems.superstructure.elevator.ElevatorSubsystem;
+import frc.robot.util.Conversions;
+import frc.robot.util.FieldConstants;
+import frc.robot.util.FieldConstants.Reef;
+import frc.robot.util.FieldConstants.Reef.ReefBranch;
+import frc.robot.util.FieldConstants.Reef.ReefFaceSide;
+import frc.robot.util.FieldConstants.Reef.ReefLevel;
+import frc.robot.util.Util;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+
+import java.util.Optional;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -39,13 +59,17 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
     // Subsystems
     private final DriveSubsystem m_drive;
-    private ElevatorSubsystem m_elevator;
+    private final ElevatorSubsystem m_elevator;
+    private final DispenserSubsystem m_dispenser;
 
     // Controller
-    private final CommandXboxController m_driverController = new CommandXboxController(0);
+    private final CommandPS5Controller m_driverController = new CommandPS5Controller(DriveTeamConstants.kDriverPort);
 
     // Dashboard inputs
     private final LoggedDashboardChooser<Command> m_autoChooser;
+
+    private boolean m_hasAutoScoreBranch;
+    private ReefBranch m_autoScoreBranch;
 
     /** The container for the robot. Contains subsystems, OI devices, and commands. */
     public RobotContainer() {
@@ -58,6 +82,18 @@ public class RobotContainer {
                     new ModuleIOTalonFX(TunerConstants.FrontRight),
                     new ModuleIOTalonFX(TunerConstants.BackLeft),
                     new ModuleIOTalonFX(TunerConstants.BackRight)
+                );
+
+                m_elevator = new ElevatorSubsystem(
+                    new ElevatorIOSparkMax(ElevatorConstants.kMotorPort, ElevatorConstants.kFollowerPort)
+                );
+
+                m_dispenser = new DispenserSubsystem(
+                    new DispenserIOSparkMax(DispenserConstants.kLeftPort, DispenserConstants.kRightPort),
+                    new DispenserSensorsIODigitalInput(
+                        DispenserConstants.kSensorPort,
+                        DispenserConstants.kSensorLeadingPort
+                    )
                 );
 
                 break;
@@ -75,6 +111,8 @@ public class RobotContainer {
 
                 m_elevator = new ElevatorSubsystem(new ElevatorIOSim());
 
+                m_dispenser = new DispenserSubsystem(new DispenserIO() {}, new DispenserSensorsIO() {});
+
                 break;
             default:
                 // Replayed robot, disable IO implementations
@@ -85,6 +123,10 @@ public class RobotContainer {
                     new ModuleIO() {},
                     new ModuleIO() {}
                 );
+
+                m_elevator = new ElevatorSubsystem(new ElevatorIO() {});
+
+                m_dispenser = new DispenserSubsystem(new DispenserIO() {}, new DispenserSensorsIO() {});
 
                 break;
         }
@@ -120,6 +162,10 @@ public class RobotContainer {
 
         // Configure the button bindings
         configureButtonBindings();
+
+        for (ReefBranch val : ReefBranch.values()) {
+            Logger.recordOutput("BranchPoses/" + val.name(), val.getPose());
+        }
     }
 
     /**
@@ -139,26 +185,91 @@ public class RobotContainer {
             )
         );
 
-        // Lock to 0° when A button is held
-        m_driverController.a().whileTrue(
-            DriveCommands.joystickDriveAtAngle(
-                m_drive,
-                () -> -m_driverController.getLeftY(),
-                () -> -m_driverController.getLeftX(),
-                () -> new Rotation2d()
-            )
-        );
+        m_driverController.R1()
+            .onTrue(Commands.runOnce(m_dispenser::runScore, m_dispenser))
+            .onFalse(Commands.runOnce(m_dispenser::stop, m_dispenser));
 
-        // Switch to X pattern when X button is pressed
-        m_driverController.x().onTrue(Commands.runOnce(m_drive::stopWithX, m_drive));
+        m_driverController.L1()
+            .onTrue(SuperstructureCommands.intake(m_elevator, m_dispenser));
 
-        // Reset gyro to 0° when B button is pressed
-        m_driverController.b().onTrue(
-            Commands.runOnce(
-                () -> m_drive.setPose(new Pose2d(m_drive.getPose().getTranslation(), new Rotation2d())),
-                m_drive
-            ).ignoringDisable(true)
-        );
+        m_driverController.cross().onTrue(ElevatorCommands.toMin(m_elevator));
+        m_driverController.circle().onTrue(ElevatorCommands.toReefLevel(m_elevator, ReefLevel.L2));
+        m_driverController.triangle().onTrue(ElevatorCommands.toReefLevel(m_elevator, ReefLevel.L3));
+        m_driverController.square().onTrue(ElevatorCommands.toReefLevel(m_elevator, ReefLevel.L4));
+
+        m_driverController.L2()
+            .and(() -> Math.abs(m_driverController.getL2Axis()) >= DriveTeamConstants.kAutoScoreStartStopThreashold)
+            .and(this::isReadyToAutoScore)
+            .whileTrue(DriveCommands.joystickDrive(m_drive, () -> 0.0, () -> 0.0, () -> 0.0))
+            .and(() -> Math.abs(m_driverController.getLeftX()) >= DriveTeamConstants.kAutoScoreSideSelectionThreshold)
+            .onTrue(Commands.runOnce(() -> {
+                Optional<ReefBranch> branch = Util.decideAutoScoreBranch(
+                    ReefFaceSide.fromDouble(m_driverController.getLeftX()),
+                    m_drive.getPose(),
+                    m_elevator.getDesiredReefLevel()
+                );
+                if (branch.isPresent()) {
+                    m_autoScoreBranch = branch.get();
+                    m_hasAutoScoreBranch = true;
+                }
+                else {
+                    DriverStation.reportWarning("Failed to decide auto score branch!", true);
+                    m_hasAutoScoreBranch = false;
+                }
+            }));
+        m_driverController.L2()
+            .and(() -> Math.abs(m_driverController.getL2Axis()) >= DriveTeamConstants.kAutoScoreStartStopThreashold)
+            .and(this::isReadyToAutoScore)
+            .and(() -> m_hasAutoScoreBranch)
+            .onFalse(
+                RobotCommands.autoScore(() -> m_autoScoreBranch, m_drive, m_elevator, m_dispenser).until(
+                    () -> m_driverController.getL2Axis() >= DriveTeamConstants.kAutoScoreStartStopThreashold
+                ).finallyDo(() -> m_hasAutoScoreBranch = false)
+            );
+
+        // m_driverController.options()
+        //     .and(this::isReadyToAutoScore)
+        //     .and(() -> Math.abs(m_driverController.getLeftX()) >= DriveTeamConstants.kAutoScoreSideSelectionThreshold)
+        //     .onTrue(
+        //         RobotCommands.autoScore(
+        //             () -> Util.decideAutoScoreBranch(
+        //                 ReefFaceSide.fromDouble(m_driverController.getLeftX()),
+        //                 m_drive.getPose(),
+        //                 ReefLevel.L4
+        //             ),
+        //             m_drive,
+        //             m_elevator,
+        //             m_dispenser
+        //         )
+        //     );
+
+        // // Lock to 0° when A button is held
+        // m_driverController.a().whileTrue(
+        //     DriveCommands.joystickDriveAtAngle(
+        //         m_drive,
+        //         () -> -m_driverController.getLeftY(),
+        //         () -> -m_driverController.getLeftX(),
+        //         () -> new Rotation2d()
+        //     )
+        // );
+
+        // // Switch to X pattern when X button is pressed
+        // m_driverController.x().onTrue(Commands.runOnce(m_drive::stopWithX, m_drive));
+
+        // // Reset gyro to 0° when B button is pressed
+        // m_driverController.b().onTrue(
+        //     Commands.runOnce(
+        //         () -> m_drive.setPose(new Pose2d(m_drive.getPose().getTranslation(), new Rotation2d())),
+        //         m_drive
+        //     ).ignoringDisable(true)
+        // );
+    }
+
+    public boolean isReadyToAutoScore() {
+        return m_elevator.hasDesiredReefLevel()
+            && (Constants.kCurrentMode == Mode.SIM || m_dispenser.hasCoral()) // If sim, assume we have coral
+            && m_drive.getPose().getTranslation().getDistance(FieldConstants.flipIfNecessary(Reef.kReefPose))
+                <= DriveConstants.kAutoScoreMaxDistMeters;
     }
 
     /**
@@ -168,6 +279,6 @@ public class RobotContainer {
      */
     public Command getAutonomousCommand() {
         //        return m_autoChooser.get();
-        return Commands.runOnce(() -> m_elevator.setDesiredPositionRad(25), m_elevator);
+        return DriveCommands.driveToPose(m_drive, () -> new Pose2d(8, 6, Rotation2d.k180deg));
     }
 }

@@ -87,9 +87,7 @@ public class Robot extends LoggedRobot {
             TunerConstants.BackLeft,
             TunerConstants.BackRight
         };
-        for (
-            var constants : modules
-        ) {
+        for (var constants : modules) {
             if (constants.DriveMotorType != DriveMotorArrangement.TalonFX_Integrated
                 || constants.SteerMotorType != SteerMotorArrangement.TalonFX_Integrated) {
                 throw new RuntimeException(

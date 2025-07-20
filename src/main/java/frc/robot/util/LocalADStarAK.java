@@ -115,9 +115,7 @@ public class LocalADStarAK implements Pathfinder {
 
             double[] pointsLogged = new double[currentPathPoints.size() * 2];
             int idx = 0;
-            for (
-                PathPoint point : currentPathPoints
-            ) {
+            for (PathPoint point : currentPathPoints) {
                 pointsLogged[idx] = point.position.getX();
                 pointsLogged[idx + 1] = point.position.getY();
                 idx += 2;
@@ -133,9 +131,7 @@ public class LocalADStarAK implements Pathfinder {
             double[] pointsLogged = table.get("CurrentPathPoints", new double[0]);
 
             List<PathPoint> pathPoints = new ArrayList<>();
-            for (
-                int i = 0; i < pointsLogged.length; i += 2
-            ) {
+            for (int i = 0; i < pointsLogged.length; i += 2) {
                 pathPoints.add(
                     new PathPoint(new Translation2d(pointsLogged[i], pointsLogged[i + 1]), null)
                 );

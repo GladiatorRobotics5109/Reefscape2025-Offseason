@@ -22,12 +22,14 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.Constants.DriveConstants.DriveToPoseConstants;
 import frc.robot.subsystems.drive.DriveSubsystem;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -167,6 +169,70 @@ public class DriveCommands {
             .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
     }
 
+    public static Command driveToPose(DriveSubsystem drive, Supplier<Pose2d> pose) {
+        ProfiledPIDController xPID = new ProfiledPIDController(
+            DriveToPoseConstants.kTranslationP,
+            DriveToPoseConstants.kTranslationI,
+            DriveToPoseConstants.kTranslationD,
+            new Constraints(DriveToPoseConstants.kTranslationMaxVel, DriveToPoseConstants.kTranslationAccel)
+        );
+        ProfiledPIDController yPID = new ProfiledPIDController(
+            DriveToPoseConstants.kTranslationP,
+            DriveToPoseConstants.kTranslationI,
+            DriveToPoseConstants.kTranslationD,
+            new Constraints(DriveToPoseConstants.kTranslationMaxVel, DriveToPoseConstants.kTranslationAccel)
+        );
+        ProfiledPIDController rotPID = new ProfiledPIDController(
+            DriveToPoseConstants.kRotationP,
+            DriveToPoseConstants.kRotationI,
+            DriveToPoseConstants.kRotationD,
+            new Constraints(DriveToPoseConstants.kRotationMaxVel, DriveToPoseConstants.kRotationAccel)
+        );
+        rotPID.enableContinuousInput(-Math.PI, Math.PI);
+
+        return Commands.run(
+            () -> {
+                Pose2d desiredPose = pose.get();
+                Pose2d currentPose = drive.getPose();
+                double x = xPID.calculate(currentPose.getX(), desiredPose.getX());
+                double y = yPID.calculate(currentPose.getY(), desiredPose.getY());
+                double rot = rotPID.calculate(
+                    currentPose.getRotation().getRadians(),
+                    desiredPose.getRotation().getRadians()
+                );
+
+                drive.runVelocity(ChassisSpeeds.fromFieldRelativeSpeeds(x, y, rot, drive.getRotation()));
+            },
+            drive
+        ).until(() -> {
+            Pose2d desiredPose = pose.get();
+            Pose2d currentPose = drive.getPose();
+
+            boolean x = MathUtil.isNear(
+                desiredPose.getX(),
+                currentPose.getX(),
+                DriveToPoseConstants.kTranslationToleranceMeters
+            );
+            boolean y = MathUtil.isNear(
+                desiredPose.getY(),
+                currentPose.getY(),
+                DriveToPoseConstants.kTranslationToleranceMeters
+            );
+            boolean rot = MathUtil.isNear(
+                desiredPose.getRotation().getRadians(),
+                currentPose.getRotation().getRadians(),
+                DriveToPoseConstants.kRotationToleranceRad
+            );
+
+            return x && y && rot;
+        }).beforeStarting(() -> {
+            Pose2d currentPose = drive.getPose();
+            xPID.reset(currentPose.getX());
+            yPID.reset(currentPose.getY());
+            rotPID.reset(currentPose.getRotation().getRadians());
+        });
+    }
+
     /**
      * Measures the velocity feedforward constants for the drive motors.
      *
@@ -218,7 +284,9 @@ public class DriveCommands {
                         double sumXY = 0.0;
                         double sumX2 = 0.0;
                         for (
-                            int i = 0; i < n; i++
+                            int i = 0;
+                            i < n;
+                            i++
                         ) {
                             sumX += velocitySamples.get(i);
                             sumY += voltageSamples.get(i);
@@ -291,7 +359,9 @@ public class DriveCommands {
                             double[] positions = drive.getWheelRadiusCharacterizationPositions();
                             double wheelDelta = 0.0;
                             for (
-                                int i = 0; i < 4; i++
+                                int i = 0;
+                                i < 4;
+                                i++
                             ) {
                                 wheelDelta += Math.abs(positions[i] - state.positions[i]) / 4.0;
                             }
