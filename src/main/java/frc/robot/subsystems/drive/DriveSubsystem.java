@@ -154,14 +154,14 @@ public class DriveSubsystem extends SubsystemBase {
         PathPlannerLogging.setLogActivePathCallback(
             (activePath) -> {
                 Logger.recordOutput(
-                    "Odometry/Trajectory",
+                    DriveConstants.kLogPath + "/Odometry/Trajectory",
                     activePath.toArray(new Pose2d[activePath.size()])
                 );
             }
         );
         PathPlannerLogging.setLogTargetPoseCallback(
             (targetPose) -> {
-                Logger.recordOutput("Odometry/TrajectorySetpoint", targetPose);
+                Logger.recordOutput(DriveConstants.kLogPath + "/Odometry/TrajectorySetpoint", targetPose);
             }
         );
 
@@ -171,7 +171,7 @@ public class DriveSubsystem extends SubsystemBase {
                 null,
                 null,
                 null,
-                (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())
+                (state) -> Logger.recordOutput(DriveConstants.kLogPath + "/Drive/SysIdState", state.toString())
             ),
             new SysIdRoutine.Mechanism(
                 (voltage) -> runCharacterization(voltage.in(Volts)),
@@ -185,7 +185,7 @@ public class DriveSubsystem extends SubsystemBase {
     public void periodic() {
         odometryLock.lock(); // Prevents odometry updates while reading data
         gyroIO.updateInputs(gyroInputs);
-        Logger.processInputs("Drive/Gyro", gyroInputs);
+        Logger.processInputs(DriveConstants.kIOLogPath + "/Gyro", gyroInputs);
         for (var module : modules) {
             module.periodic();
         }
@@ -200,8 +200,11 @@ public class DriveSubsystem extends SubsystemBase {
 
         // Log empty setpoint states when disabled
         if (DriverStation.isDisabled()) {
-            Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-            Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+            Logger.recordOutput(DriveConstants.kLogPath + "/SwerveStates/Setpoints", new SwerveModuleState[] {});
+            Logger.recordOutput(
+                DriveConstants.kLogPath + "/SwerveStates/SetpointsOptimized",
+                new SwerveModuleState[] {}
+            );
         }
 
         // Update odometry
@@ -252,8 +255,8 @@ public class DriveSubsystem extends SubsystemBase {
         SwerveDriveKinematics.desaturateWheelSpeeds(setpointStates, TunerConstants.kSpeedAt12Volts);
 
         // Log unoptimized setpoints and setpoint speeds
-        Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-        Logger.recordOutput("SwerveChassisSpeeds/Setpoints", discreteSpeeds);
+        Logger.recordOutput(DriveConstants.kLogPath + "/SwerveStates/Setpoints", setpointStates);
+        Logger.recordOutput(DriveConstants.kLogPath + "/SwerveChassisSpeeds/Setpoints", discreteSpeeds);
 
         // Send setpoints to modules
         for (int i = 0; i < 4; i++) {
@@ -261,7 +264,7 @@ public class DriveSubsystem extends SubsystemBase {
         }
 
         // Log optimized setpoints (runSetpoint mutates each state)
-        Logger.recordOutput("SwerveStates/SetpointsOptimized", setpointStates);
+        Logger.recordOutput(DriveConstants.kLogPath + "/SwerveStates/SetpointsOptimized", setpointStates);
     }
 
     /** Runs the drive in a straight line with the specified drive output. */
@@ -302,9 +305,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /** Returns the module states (turn angles and drive velocities) for all of the modules. */
-    @AutoLogOutput(
-        key = "SwerveStates/Measured"
-    )
+    @AutoLogOutput(key = DriveConstants.kLogPath + "/SwerveStates/Measured")
     private SwerveModuleState[] getModuleStates() {
         SwerveModuleState[] states = new SwerveModuleState[4];
         for (int i = 0; i < 4; i++) {
@@ -323,9 +324,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /** Returns the measured chassis speeds of the robot. */
-    @AutoLogOutput(
-        key = "SwerveChassisSpeeds/Measured"
-    )
+    @AutoLogOutput(key = DriveConstants.kLogPath + "/SwerveChassisSpeeds/Measured")
     private ChassisSpeeds getChassisSpeeds() { return kinematics.toChassisSpeeds(getModuleStates()); }
 
     /** Returns the position of each module in radians. */

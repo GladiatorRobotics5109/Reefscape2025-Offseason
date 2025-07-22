@@ -14,6 +14,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.generated.TunerConstants;
 import frc.robot.util.Conversions;
 import frc.robot.util.FieldConstants.Reef.ReefLevel;
 
@@ -46,7 +47,7 @@ public final class Constants {
     }
 
     public static final class DriveConstants {
-        public static final String kIOLogPath = "DriveIO";
+        public static final String kIOLogPath = "IO/DriveIO";
         public static final String kLogPath = "Subsystems/Drive";
 
         public static final double kAutoScoreMaxDistMeters = 1.75;
@@ -70,7 +71,7 @@ public final class Constants {
     }
 
     public static final class ElevatorConstants {
-        public static final String kIOLogPath = "ElevatorIO";
+        public static final String kIOLogPath = "IO/ElevatorIO";
         public static final String kLogPath = "Subsystems/Elevator";
 
         public static final double kP = 0.0;
@@ -111,10 +112,17 @@ public final class Constants {
         public static final double kPositionToleranceRad = Conversions.elevatorMetersToRadians(
             Conversions.inchesToMeters(1)
         );
+
+        /** The height the base of the elevator is off the floor (for mechanism visualization) */
+        public static final double kElevatorBaseHeightMeters = TunerConstants.FrontLeft.WheelRadius
+            + Conversions.inchesToMeters(3.0 / 4.0);
+        /** The amount the dispenser extends above the elevator (for mechanism visualization) */
+        public static final double kDispenserHeightMeters = Conversions.inchesToMeters(21.5);
     }
 
     public static final class DispenserConstants {
-        public static final String kIOLogPath = "DispenserIO";
+        public static final String kIOLogPath = "IO/DispenserIO";
+        public static final String kLogPath = "Subsystems/Dispenser";
 
         public static final double kGearRatio = 12;
 

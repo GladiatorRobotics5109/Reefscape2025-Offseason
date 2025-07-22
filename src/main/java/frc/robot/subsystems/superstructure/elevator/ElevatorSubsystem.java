@@ -6,6 +6,7 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.ElevatorConstants;
 import frc.robot.util.Conversions;
@@ -13,6 +14,9 @@ import frc.robot.util.FieldConstants.Reef.ReefLevel;
 import lombok.Getter;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
+import org.littletonrobotics.junction.mechanism.LoggedMechanism2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismLigament2d;
+import org.littletonrobotics.junction.mechanism.LoggedMechanismRoot2d;
 
 public class ElevatorSubsystem extends SubsystemBase {
     private final ElevatorIO m_io;
@@ -38,6 +42,11 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final ProfiledPIDController m_pid;
     private final ElevatorFeedforward m_ff;
 
+    private final LoggedMechanism2d m_mech;
+    private final LoggedMechanismRoot2d m_mechRoot;
+    private final LoggedMechanismLigament2d m_mechElevator;
+    private final LoggedMechanismLigament2d m_mechDispenser;
+
     public ElevatorSubsystem(ElevatorIO io) {
         m_io = io;
 
@@ -55,6 +64,27 @@ public class ElevatorSubsystem extends SubsystemBase {
             ElevatorConstants.kG,
             ElevatorConstants.kV,
             ElevatorConstants.kA
+        );
+
+        m_mech = new LoggedMechanism2d(0, 0);
+        m_mechRoot = m_mech.getRoot("Base", 0, ElevatorConstants.kElevatorBaseHeightMeters);
+        m_mechElevator = m_mechRoot.append(
+            new LoggedMechanismLigament2d(
+                "Elevator",
+                ElevatorConstants.kElevatorBaseHeightMeters,
+                90,
+                6,
+                new Color8Bit(0, 0, 0)
+            )
+        );
+        m_mechDispenser = m_mechElevator.append(
+            new LoggedMechanismLigament2d(
+                "EndEffector",
+                ElevatorConstants.kDispenserHeightMeters - ElevatorConstants.kElevatorBaseHeightMeters,
+                0,
+                3,
+                new Color8Bit(255, 0, 0)
+            )
         );
     }
 
@@ -85,10 +115,10 @@ public class ElevatorSubsystem extends SubsystemBase {
         );
     }
 
-    @AutoLogOutput
+    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/CurrentPositionRad")
     public double getCurrentPositionRad() { return m_inputs.positionRad; }
 
-    @AutoLogOutput
+    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/CurrentPositionMeters")
     public double getCurrentPositionMeters() { return Conversions.elevatorRadiansToMeters(getCurrentPositionRad()); }
 
     public boolean hasDesiredPosition() { return m_hasDesiredPosition; }
@@ -124,5 +154,9 @@ public class ElevatorSubsystem extends SubsystemBase {
             getCurrentPositionRad(),
             ElevatorConstants.kPositionToleranceRad
         );
+
+        // Update mech
+        m_mechElevator.setLength(getCurrentPositionMeters());
+        Logger.recordOutput(ElevatorConstants.kLogPath + "/Mechanism", m_mech);
     }
 }

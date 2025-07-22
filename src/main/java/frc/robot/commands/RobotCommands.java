@@ -27,11 +27,15 @@ public class RobotCommands {
                 Logger.recordOutput("AutoScore/DesiredBranch", FieldConstants.flipIfNecessary(branch.getPose()));
                 Logger.recordOutput("AutoScore/DrivePose", Util.getDriveScorePose(branch));
             }),
-            DriveCommands.driveToPose(
-                drive,
-                () -> FieldConstants.flipIfNecessary(Util.getDriveScorePose(branchSupplier.get()))
+            ElevatorCommands.toReefLevel(elevator, () -> branchSupplier.get().getLevel()).asProxy(),
+            Commands.sequence(
+                DriveCommands.driveToPose(
+                    drive,
+                    () -> FieldConstants.flipIfNecessary(Util.getDriveScorePose(branchSupplier.get()))
+                ),
+                DispenserCommands.score(dispenser),
+                ElevatorCommands.toMin(elevator).asProxy()
             )
-            //            DriveCommands.driveToPose(drive, () -> {})
         );
     }
 }

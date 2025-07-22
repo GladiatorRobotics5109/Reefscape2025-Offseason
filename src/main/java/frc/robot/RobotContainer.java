@@ -38,7 +38,6 @@ import frc.robot.subsystems.superstructure.elevator.ElevatorIO;
 import frc.robot.subsystems.superstructure.elevator.ElevatorIOSim;
 import frc.robot.subsystems.superstructure.elevator.ElevatorIOSparkMax;
 import frc.robot.subsystems.superstructure.elevator.ElevatorSubsystem;
-import frc.robot.util.Conversions;
 import frc.robot.util.FieldConstants;
 import frc.robot.util.FieldConstants.Reef;
 import frc.robot.util.FieldConstants.Reef.ReefBranch;

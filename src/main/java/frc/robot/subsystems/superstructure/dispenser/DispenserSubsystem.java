@@ -24,10 +24,10 @@ public class DispenserSubsystem extends SubsystemBase {
         m_sensors = new DispenserSensors(sensorsIO, DispenserConstants.kIOLogPath + "/Sensors");
     }
 
-    @AutoLogOutput
+    @AutoLogOutput(key = DispenserConstants.kLogPath + "/HasCoral")
     public boolean hasCoral() { return m_sensors.getSensor(); }
 
-    @AutoLogOutput
+    @AutoLogOutput(key = DispenserConstants.kLogPath + "/HasLeadingCoral")
     public boolean hasLeadingCoral() { return m_sensors.getLeadingSensor(); }
 
     public void setVoltage(double leftVolts, double rightVolts) { m_io.setVoltage(leftVolts, rightVolts); }
