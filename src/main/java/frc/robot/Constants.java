@@ -14,6 +14,11 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.generated.TunerConstants;
+import frc.robot.util.Conversions;
+import frc.robot.util.FieldConstants.Reef.ReefLevel;
+
+import java.util.HashMap;
 
 /**
  * This class defines the runtime mode used by AdvantageKit. The mode is always "real" when running
@@ -21,17 +26,133 @@ import edu.wpi.first.wpilibj.RobotBase;
  * (log replay from a file).
  */
 public final class Constants {
-  public static final Mode simMode = Mode.SIM;
-  public static final Mode currentMode = RobotBase.isReal() ? Mode.REAL : simMode;
+    public static final Mode kSimMode = Mode.SIM;
+    public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
 
-  public static enum Mode {
-    /** Running on a real robot. */
-    REAL,
+    public static final class DriveTeamConstants {
+        public static final int kDriverPort = 0;
+        public static final int kOperatorPort = 1;
 
-    /** Running a physics simulator. */
-    SIM,
+        public static final double kAutoScoreStartStopThreashold = 0.125;
+        public static final double kAutoScoreSideSelectionThreshold = 0.125;
 
-    /** Replaying from a log file. */
-    REPLAY
-  }
+        public static final double kDriverControllerDeadzone = 0.1;
+    }
+
+    public static enum Mode {
+        /** Running on a real robot. */
+        REAL,
+        /** Running a physics simulator. */
+        SIM,
+        /** Replaying from a log file. */
+        REPLAY
+    }
+
+    public static final class DriveConstants {
+        public static final String kIOLogPath = "IO/DriveIO";
+        public static final String kLogPath = "Subsystems/Drive";
+
+        public static final double kAutoScoreMaxDistMeters = 1.75;
+        public static final double kAutoScorePoseOffsetMeters = Conversions.inchesToMeters(15);
+
+        public static final double kDefaultLinearSpeedMetersPerSec = 4.69;
+        public static final double kSlowModeLinearSpeedMetersPerSec = 1.0;
+        public static final double kDefaultAngularSpeedRadPerSec = Conversions.rotationsToRadians(1.5);
+        public static final double kSlowModeAngularSpeedRadPerSec = Conversions.rotationsToRadians(0.75);
+
+        public static final class DriveAtAngleConstants {
+            public static final double kP = 5.0;
+            public static final double kD = 0.4;
+            public static final double kMaxVelocityRadPerSec = 8.0;
+            public static final double kMaxAccelerationRadPerSec = 20.0;
+        }
+
+        public static final class DriveToPoseConstants {
+            public static final double kTranslationP = 5.0;
+            public static final double kTranslationI = 0.0;
+            public static final double kTranslationD = 0.0;
+            public static final double kTranslationMaxVel = 2.0;
+            public static final double kTranslationAccel = 4.0;
+            public static final double kTranslationToleranceMeters = Conversions.inchesToMeters(0.5);
+
+            public static final double kRotationP = 5.0;
+            public static final double kRotationI = 0.0;
+            public static final double kRotationD = 0.0;
+            public static final double kRotationMaxVel = 6.0;
+            public static final double kRotationAccel = 12.0;
+            public static final double kRotationToleranceRad = Conversions.degreesToRadians(0.5);
+        }
+    }
+
+    public static final class ElevatorConstants {
+        public static final String kIOLogPath = "IO/ElevatorIO";
+        public static final String kLogPath = "Subsystems/Elevator";
+
+        public static final double kP = 0.0;
+        public static final double kI = 0.0;
+        public static final double kD = 0.0;
+
+        public static final double kS = 0.1;
+        public static final double kV = 0.55;
+        public static final double kA = 0.0;
+        public static final double kG = 0.355;
+
+        public static final double kGearRatio = 12;
+        public static final double kSprocketRadiusMeters = Conversions.inchesToMeters(0.819);
+
+        public static final double kMaxVelocityRadPerSec = 24.2;
+        public static final double kMaxAccelerationRadPerSecPerSec = Conversions.elevatorMetersToRadians(1.5);
+
+        public static final double kMinPositionRad = -0.03;
+        public static final double kMaxPositionRad = 30.05;
+
+        public static final double kMinHeightMeters = Conversions.elevatorRadiansToMeters(kMinPositionRad);
+        public static final double kMaxHeightMeters = Conversions.elevatorRadiansToMeters(kMaxPositionRad);
+
+        public static final double kSupplyCurrentLimit = 40.0;
+
+        public static final int kMotorPort = 40;
+        public static final boolean kInvertMotor = true;
+        public static final int kFollowerPort = 41;
+
+        public static final HashMap<ReefLevel, Double> kHeightOffsets = new HashMap<>();
+        static {
+            kHeightOffsets.put(ReefLevel.L1, 0.0);
+            kHeightOffsets.put(ReefLevel.L2, 0.0);
+            kHeightOffsets.put(ReefLevel.L3, 0.0);
+            kHeightOffsets.put(ReefLevel.L4, 0.0);
+        }
+
+        public static final double kPositionToleranceRad = Conversions.elevatorMetersToRadians(
+            Conversions.inchesToMeters(1)
+        );
+
+        /** The height the base of the elevator is off the floor (for mechanism visualization) */
+        public static final double kElevatorBaseHeightMeters = TunerConstants.FrontLeft.WheelRadius
+            + Conversions.inchesToMeters(3.0 / 4.0);
+        /** The amount the dispenser extends above the elevator (for mechanism visualization) */
+        public static final double kDispenserHeightMeters = Conversions.inchesToMeters(21.5);
+    }
+
+    public static final class DispenserConstants {
+        public static final String kIOLogPath = "IO/DispenserIO";
+        public static final String kLogPath = "Subsystems/Dispenser";
+
+        public static final double kGearRatio = 12;
+
+        public static final boolean kInvertMotor = true;
+
+        public static final int kLeftPort = 51;
+        public static final int kRightPort = 50;
+
+        public static final int kSensorPort = 1;
+        public static final int kSensorLeadingPort = 2;
+
+        public static final double kSupplyCurrentLimit = 40;
+
+        public static final double kScoreVoltage = 5;
+        public static final double kIntakeVoltage = 6;
+        public static final double kIntakeSlowVoltage = 5;
+        public static final double kIntakeSlowSlowVoltage = -1.75;
+    }
 }
