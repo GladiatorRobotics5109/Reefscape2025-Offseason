@@ -20,7 +20,9 @@ public class Util {
     public Optional<ReefBranch> decideAutoScoreBranch(ReefFaceSide side, Pose2d currentPose, ReefLevel level) {
         // First 2 faces should be the faces with the closest base
         ReefFace[] desiredFaces = Arrays.stream(ReefFace.values()).sorted(
-            Comparator.comparingDouble(face -> face.getTranslation().getDistance(currentPose.getTranslation()))
+            Comparator.comparingDouble(
+                face -> FieldConstants.flipIfNecessary(face.getTranslation()).getDistance(currentPose.getTranslation())
+            )
         ).toArray(ReefFace[]::new);
 
         Optional<ReefFace> desiredFaceOpt = Optional.empty();

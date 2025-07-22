@@ -135,27 +135,27 @@ public class RobotContainer {
 
         // Set up SysId routines
         m_autoChooser.addOption(
-            "Drive Wheel Radius Characterization",
+            "Test_DriveWheelRadiusCharacterization",
             DriveCommands.wheelRadiusCharacterization(m_drive)
         );
         m_autoChooser.addOption(
-            "Drive Simple FF Characterization",
+            "Test_DriveSimpleFFCharacterization",
             DriveCommands.feedforwardCharacterization(m_drive)
         );
         m_autoChooser.addOption(
-            "Drive SysId (Quasistatic Forward)",
+            "Test_DriveSysId(Quasistatic Forward)",
             m_drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward)
         );
         m_autoChooser.addOption(
-            "Drive SysId (Quasistatic Reverse)",
+            "Test_DriveSysId(Quasistatic Reverse)",
             m_drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse)
         );
         m_autoChooser.addOption(
-            "Drive SysId (Dynamic Forward)",
+            "Test_DriveSysId(Dynamic Forward)",
             m_drive.sysIdDynamic(SysIdRoutine.Direction.kForward)
         );
         m_autoChooser.addOption(
-            "Drive SysId (Dynamic Reverse)",
+            "Test_DriveSysId(Dynamic Reverse)",
             m_drive.sysIdDynamic(SysIdRoutine.Direction.kReverse)
         );
 
@@ -180,7 +180,8 @@ public class RobotContainer {
                 m_drive,
                 () -> -m_driverController.getLeftY(),
                 () -> -m_driverController.getLeftX(),
-                () -> -m_driverController.getRightX()
+                () -> -m_driverController.getRightX(),
+                m_driverController::getR2Axis
             )
         );
 
@@ -199,7 +200,7 @@ public class RobotContainer {
         m_driverController.L2()
             .and(() -> Math.abs(m_driverController.getL2Axis()) >= DriveTeamConstants.kAutoScoreStartStopThreashold)
             .and(this::isReadyToAutoScore)
-            .whileTrue(DriveCommands.joystickDrive(m_drive, () -> 0.0, () -> 0.0, () -> 0.0))
+            .whileTrue(DriveCommands.joystickDrive(m_drive, () -> 0.0, () -> 0.0, () -> 0.0, () -> 0.0))
             .and(() -> Math.abs(m_driverController.getLeftX()) >= DriveTeamConstants.kAutoScoreSideSelectionThreshold)
             .onTrue(Commands.runOnce(() -> {
                 Optional<ReefBranch> branch = Util.decideAutoScoreBranch(
@@ -221,9 +222,9 @@ public class RobotContainer {
             .and(this::isReadyToAutoScore)
             .and(() -> m_hasAutoScoreBranch)
             .onFalse(
-                RobotCommands.autoScore(() -> m_autoScoreBranch, m_drive, m_elevator, m_dispenser).until(
-                    () -> m_driverController.getL2Axis() >= DriveTeamConstants.kAutoScoreStartStopThreashold
-                ).finallyDo(() -> m_hasAutoScoreBranch = false)
+                RobotCommands.autoScore(() -> m_autoScoreBranch, m_drive, m_elevator, m_dispenser)
+                    .until(() -> m_driverController.getL2Axis() >= DriveTeamConstants.kAutoScoreStartStopThreashold)
+                    .finallyDo(() -> m_hasAutoScoreBranch = false)
             );
 
         // m_driverController.options()
@@ -277,7 +278,6 @@ public class RobotContainer {
      * @return the command to run in autonomous
      */
     public Command getAutonomousCommand() {
-        //        return m_autoChooser.get();
-        return DriveCommands.driveToPose(m_drive, () -> new Pose2d(8, 6, Rotation2d.k180deg));
+        return m_autoChooser.get();
     }
 }

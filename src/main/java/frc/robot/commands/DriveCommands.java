@@ -29,7 +29,11 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.Constants.DriveConstants.DriveToPoseConstants;
+import static frc.robot.Constants.DriveConstants;
+import static frc.robot.Constants.DriveConstants.DriveToPoseConstants;
+
+import frc.robot.Constants.DriveConstants.DriveAtAngleConstants;
+import frc.robot.Constants.DriveTeamConstants;
 import frc.robot.subsystems.drive.DriveSubsystem;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -39,11 +43,11 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public class DriveCommands {
-    private static final double DEADBAND = 0.1;
-    private static final double ANGLE_KP = 5.0;
-    private static final double ANGLE_KD = 0.4;
-    private static final double ANGLE_MAX_VELOCITY = 8.0;
-    private static final double ANGLE_MAX_ACCELERATION = 20.0;
+    private static final double DEADBAND = DriveTeamConstants.kDriverControllerDeadzone;
+    private static final double ANGLE_KP = DriveAtAngleConstants.kP;
+    private static final double ANGLE_KD = DriveAtAngleConstants.kD;
+    private static final double ANGLE_MAX_VELOCITY = DriveAtAngleConstants.kMaxVelocityRadPerSec;
+    private static final double ANGLE_MAX_ACCELERATION = DriveAtAngleConstants.kMaxAccelerationRadPerSec;
     private static final double FF_START_DELAY = 2.0; // Secs
     private static final double FF_RAMP_RATE = 0.1; // Volts/Sec
     private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
@@ -65,6 +69,30 @@ public class DriveCommands {
             .getTranslation();
     }
 
+    private static double getLinearSpeed(DriveSubsystem drive, double slowMode) {
+        return MathUtil.clamp(
+            MathUtil.interpolate(
+                DriveConstants.kDefaultLinearSpeedMetersPerSec,
+                DriveConstants.kSlowModeLinearSpeedMetersPerSec,
+                slowMode
+            ),
+            0.0,
+            drive.getMaxLinearSpeedMetersPerSec()
+        );
+    }
+
+    private static double getAngularSpeed(DriveSubsystem drive, double slowMode) {
+        return MathUtil.clamp(
+            MathUtil.interpolate(
+                DriveConstants.kDefaultAngularSpeedRadPerSec,
+                DriveConstants.kSlowModeAngularSpeedRadPerSec,
+                slowMode
+            ),
+            0.0,
+            drive.getMaxAngularSpeedRadPerSec()
+        );
+    }
+
     /**
      * Field relative drive command using two joysticks (controlling linear and angular velocities).
      */
@@ -72,7 +100,8 @@ public class DriveCommands {
         DriveSubsystem drive,
         DoubleSupplier xSupplier,
         DoubleSupplier ySupplier,
-        DoubleSupplier omegaSupplier
+        DoubleSupplier omegaSupplier,
+        DoubleSupplier slowMode
     ) {
         return Commands.run(
             () -> {
@@ -88,11 +117,14 @@ public class DriveCommands {
                 // Square rotation value for more precise control
                 omega = Math.copySign(omega * omega, omega);
 
+                double linearSpeed = getLinearSpeed(drive, slowMode.getAsDouble());
+                double angularSpeed = getAngularSpeed(drive, slowMode.getAsDouble());
+
                 // Convert to field relative speeds & send command
                 ChassisSpeeds speeds = new ChassisSpeeds(
-                    linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                    linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
-                    omega * drive.getMaxAngularSpeedRadPerSec()
+                    linearVelocity.getX() * linearSpeed,
+                    linearVelocity.getY() * linearSpeed,
+                    omega * angularSpeed
                 );
                 boolean isFlipped = DriverStation.getAlliance().isPresent()
                     && DriverStation.getAlliance().get() == Alliance.Red;
@@ -227,9 +259,11 @@ public class DriveCommands {
             return x && y && rot;
         }).beforeStarting(() -> {
             Pose2d currentPose = drive.getPose();
-            xPID.reset(currentPose.getX());
-            yPID.reset(currentPose.getY());
-            rotPID.reset(currentPose.getRotation().getRadians());
+            ChassisSpeeds speeds = drive.getChassisSpeeds();
+
+            xPID.reset(currentPose.getX(), speeds.vxMetersPerSecond);
+            yPID.reset(currentPose.getY(), speeds.vyMetersPerSecond);
+            rotPID.reset(currentPose.getRotation().getRadians(), speeds.omegaRadiansPerSecond);
         });
     }
 

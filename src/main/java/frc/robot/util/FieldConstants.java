@@ -109,7 +109,11 @@ public class FieldConstants {
                 m_translation = m_baseTranslation.plus(
                     new Translation2d(
                         Reef.kReefBranchDistMeters / 2,
-                        m_angle.plus(side == ReefFaceSide.Right ? Rotation2d.kCCW_90deg : Rotation2d.kCW_90deg)
+                        m_angle.plus(
+                            Math.abs(angle.getDegrees()) <= 60
+                                ? side == ReefFaceSide.Left ? Rotation2d.kCCW_90deg : Rotation2d.kCW_90deg
+                                : side == ReefFaceSide.Right ? Rotation2d.kCCW_90deg : Rotation2d.kCW_90deg
+                        )
                     )
                 );
                 m_pose = new Pose2d(m_translation, m_angle);
@@ -205,14 +209,20 @@ public class FieldConstants {
     }
 
     public Pose3d flipIfNecessary(Pose3d pose) {
-        return shouldFlip()
-            ? new Pose3d(
+        return shouldFlip() ? switch (FlippingUtil.symmetryType) {
+            case kMirrored -> new Pose3d(
                 FlippingUtil.fieldSizeX - pose.getX(),
                 pose.getY(),
                 pose.getZ(),
                 flipIfNecessary(pose.getRotation())
-            )
-            : pose;
+            );
+            case kRotational -> new Pose3d(
+                FlippingUtil.fieldSizeX - pose.getX(),
+                FlippingUtil.fieldSizeY - pose.getY(),
+                pose.getZ(),
+                flipIfNecessary(pose.getRotation())
+            );
+        } : pose;
     }
 
     public Translation2d flipIfNecessary(Translation2d translation) {

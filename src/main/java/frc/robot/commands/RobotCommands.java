@@ -25,7 +25,10 @@ public class RobotCommands {
 
                 System.out.println("Auto scoring on branch: " + branch);
                 Logger.recordOutput("AutoScore/DesiredBranch", FieldConstants.flipIfNecessary(branch.getPose()));
-                Logger.recordOutput("AutoScore/DrivePose", Util.getDriveScorePose(branch));
+                Logger.recordOutput(
+                    "AutoScore/DrivePose",
+                    FieldConstants.flipIfNecessary(Util.getDriveScorePose(branch))
+                );
             }),
             ElevatorCommands.toReefLevel(elevator, () -> branchSupplier.get().getLevel()).asProxy(),
             Commands.sequence(

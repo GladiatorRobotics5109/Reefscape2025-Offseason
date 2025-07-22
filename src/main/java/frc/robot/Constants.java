@@ -35,6 +35,8 @@ public final class Constants {
 
         public static final double kAutoScoreStartStopThreashold = 0.125;
         public static final double kAutoScoreSideSelectionThreshold = 0.125;
+
+        public static final double kDriverControllerDeadzone = 0.1;
     }
 
     public static enum Mode {
@@ -53,19 +55,31 @@ public final class Constants {
         public static final double kAutoScoreMaxDistMeters = 1.75;
         public static final double kAutoScorePoseOffsetMeters = Conversions.inchesToMeters(15);
 
+        public static final double kDefaultLinearSpeedMetersPerSec = 4.69;
+        public static final double kSlowModeLinearSpeedMetersPerSec = 1.0;
+        public static final double kDefaultAngularSpeedRadPerSec = Conversions.rotationsToRadians(1.5);
+        public static final double kSlowModeAngularSpeedRadPerSec = Conversions.rotationsToRadians(0.75);
+
+        public static final class DriveAtAngleConstants {
+            public static final double kP = 5.0;
+            public static final double kD = 0.4;
+            public static final double kMaxVelocityRadPerSec = 8.0;
+            public static final double kMaxAccelerationRadPerSec = 20.0;
+        }
+
         public static final class DriveToPoseConstants {
             public static final double kTranslationP = 5.0;
             public static final double kTranslationI = 0.0;
             public static final double kTranslationD = 0.0;
             public static final double kTranslationMaxVel = 2.0;
-            public static final double kTranslationAccel = 1.0;
+            public static final double kTranslationAccel = 4.0;
             public static final double kTranslationToleranceMeters = Conversions.inchesToMeters(0.5);
 
             public static final double kRotationP = 5.0;
             public static final double kRotationI = 0.0;
             public static final double kRotationD = 0.0;
             public static final double kRotationMaxVel = 6.0;
-            public static final double kRotationAccel = 2.0;
+            public static final double kRotationAccel = 12.0;
             public static final double kRotationToleranceRad = Conversions.degreesToRadians(0.5);
         }
     }
