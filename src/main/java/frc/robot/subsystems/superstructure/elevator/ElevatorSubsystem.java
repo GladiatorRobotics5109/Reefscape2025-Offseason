@@ -8,7 +8,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.util.Color8Bit;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.ElevatorConstants;
+import static frc.robot.Constants.ElevatorConstants.*;
 import frc.robot.util.Conversions;
 import frc.robot.util.FieldConstants.Reef.ReefLevel;
 import lombok.Getter;
@@ -23,20 +23,20 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final ElevatorIOInputsAutoLogged m_inputs = new ElevatorIOInputsAutoLogged();
 
     @Getter
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/DesiredPositionRad")
+    @AutoLogOutput(key = kLogPath + "/DesiredPositionRad")
     private double m_desiredPositionRad = 0.0;
 
     @Getter
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/DesiredReefLevel")
+    @AutoLogOutput(key = kLogPath + "/DesiredReefLevel")
     private ReefLevel m_desiredReefLevel = ReefLevel.L1;
 
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/HasDesiredPosition")
+    @AutoLogOutput(key = kLogPath + "/HasDesiredPosition")
     private boolean m_hasDesiredPosition = false;
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/HasDesiredReefLevel")
+    @AutoLogOutput(key = kLogPath + "/HasDesiredReefLevel")
     private boolean m_hasDesiredReefLevel = false;
 
     @Getter
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/IsAtDesiredPosition")
+    @AutoLogOutput(key = kLogPath + "/IsAtDesiredPosition")
     private boolean m_atDesiredPosition = false;
 
     private final ProfiledPIDController m_pid;
@@ -51,27 +51,19 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_io = io;
 
         m_pid = new ProfiledPIDController(
-            ElevatorConstants.kP,
-            ElevatorConstants.kI,
-            ElevatorConstants.kD,
-            new TrapezoidProfile.Constraints(
-                ElevatorConstants.kMaxVelocityRadPerSec,
-                ElevatorConstants.kMaxAccelerationRadPerSecPerSec
-            )
+            kP,
+            kI,
+            kD,
+            new TrapezoidProfile.Constraints(kMaxVelocityRadPerSec, kMaxAccelerationRadPerSecPerSec)
         );
-        m_ff = new ElevatorFeedforward(
-            ElevatorConstants.kS,
-            ElevatorConstants.kG,
-            ElevatorConstants.kV,
-            ElevatorConstants.kA
-        );
+        m_ff = new ElevatorFeedforward(kS, kG, kV, kA);
 
         m_mech = new LoggedMechanism2d(0, 0);
-        m_mechRoot = m_mech.getRoot("Base", 0, ElevatorConstants.kElevatorBaseHeightMeters);
+        m_mechRoot = m_mech.getRoot("Base", 0, kElevatorBaseHeightMeters);
         m_mechElevator = m_mechRoot.append(
             new LoggedMechanismLigament2d(
                 "Elevator",
-                ElevatorConstants.kElevatorBaseHeightMeters,
+                kElevatorBaseHeightMeters,
                 90,
                 6,
                 new Color8Bit(0, 0, 0)
@@ -80,7 +72,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_mechDispenser = m_mechElevator.append(
             new LoggedMechanismLigament2d(
                 "EndEffector",
-                ElevatorConstants.kDispenserHeightMeters - ElevatorConstants.kElevatorBaseHeightMeters,
+                kDispenserHeightMeters - kElevatorBaseHeightMeters,
                 0,
                 3,
                 new Color8Bit(255, 0, 0)
@@ -111,14 +103,14 @@ public class ElevatorSubsystem extends SubsystemBase {
         m_hasDesiredReefLevel = true;
         m_desiredReefLevel = level;
         m_desiredPositionRad = Conversions.elevatorMetersToRadians(
-            level.getHeightMeters() + ElevatorConstants.kHeightOffsets.get(level)
+            level.getHeightMeters() + kHeightOffsets.get(level)
         );
     }
 
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/CurrentPositionRad")
+    @AutoLogOutput(key = kLogPath + "/CurrentPositionRad")
     public double getCurrentPositionRad() { return m_inputs.positionRad; }
 
-    @AutoLogOutput(key = ElevatorConstants.kLogPath + "/CurrentPositionMeters")
+    @AutoLogOutput(key = kLogPath + "/CurrentPositionMeters")
     public double getCurrentPositionMeters() { return Conversions.elevatorRadiansToMeters(getCurrentPositionRad()); }
 
     public boolean hasDesiredPosition() { return m_hasDesiredPosition; }
@@ -129,7 +121,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     public void periodic() {
         m_io.periodic();
         m_io.updateInputs(m_inputs);
-        Logger.processInputs(ElevatorConstants.kIOLogPath, m_inputs);
+        Logger.processInputs(kIOLogPath, m_inputs);
 
         if (DriverStation.isDisabled()) {
             stop();
@@ -140,23 +132,23 @@ public class ElevatorSubsystem extends SubsystemBase {
                 m_desiredPositionRad
             );
             State setpoint = m_pid.getSetpoint();
-            Logger.recordOutput(ElevatorConstants.kLogPath + "/Profile/DesiredVelocity", setpoint.velocity);
-            Logger.recordOutput(ElevatorConstants.kLogPath + "/Profile/DesiredPosition", setpoint.position);
+            Logger.recordOutput(kLogPath + "/Profile/DesiredVelocity", setpoint.velocity);
+            Logger.recordOutput(kLogPath + "/Profile/DesiredPosition", setpoint.position);
             double ff = m_ff.calculate(setpoint.velocity);
             double desiredVoltage = pid + ff;
 
-            Logger.recordOutput(ElevatorConstants.kLogPath + "/Profile/DesiredVoltage", desiredVoltage);
+            Logger.recordOutput(kLogPath + "/Profile/DesiredVoltage", desiredVoltage);
             m_io.setVoltage(desiredVoltage);
         }
 
         m_atDesiredPosition = MathUtil.isNear(
             m_desiredPositionRad,
             getCurrentPositionRad(),
-            ElevatorConstants.kPositionToleranceRad
+            kPositionToleranceRad
         );
 
         // Update mech
         m_mechElevator.setLength(getCurrentPositionMeters());
-        Logger.recordOutput(ElevatorConstants.kLogPath + "/Mechanism", m_mech);
+        Logger.recordOutput(kLogPath + "/Mechanism", m_mech);
     }
 }

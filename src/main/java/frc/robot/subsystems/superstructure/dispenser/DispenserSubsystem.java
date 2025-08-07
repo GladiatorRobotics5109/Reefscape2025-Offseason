@@ -1,7 +1,7 @@
 package frc.robot.subsystems.superstructure.dispenser;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.DispenserConstants;
+import static frc.robot.Constants.DispenserConstants.*;
 import frc.robot.subsystems.superstructure.dispenser.sensors.DispenserSensors;
 import frc.robot.subsystems.superstructure.dispenser.sensors.DispenserSensorsIO;
 import lombok.Getter;
@@ -21,13 +21,13 @@ public class DispenserSubsystem extends SubsystemBase {
         m_io = io;
         m_inputs = new DispenserIOInputsAutoLogged();
 
-        m_sensors = new DispenserSensors(sensorsIO, DispenserConstants.kIOLogPath + "/Sensors");
+        m_sensors = new DispenserSensors(sensorsIO, kIOLogPath + "/Sensors");
     }
 
-    @AutoLogOutput(key = DispenserConstants.kLogPath + "/HasCoral")
+    @AutoLogOutput(key = kLogPath + "/HasCoral")
     public boolean hasCoral() { return m_sensors.getSensor(); }
 
-    @AutoLogOutput(key = DispenserConstants.kLogPath + "/HasLeadingCoral")
+    @AutoLogOutput(key = kLogPath + "/HasLeadingCoral")
     public boolean hasLeadingCoral() { return m_sensors.getLeadingSensor(); }
 
     public void setVoltage(double leftVolts, double rightVolts) { m_io.setVoltage(leftVolts, rightVolts); }
@@ -39,19 +39,25 @@ public class DispenserSubsystem extends SubsystemBase {
         m_intaking = false;
     }
 
-    public void runScore() { setVoltage(DispenserConstants.kScoreVoltage); m_intaking = false; }
+    public void runScore() {
+        setVoltage(kScoreVoltage);
+        m_intaking = false;
+    }
 
     public void runIntake() {
-        setVoltage(DispenserConstants.kIntakeVoltage);
+        setVoltage(kIntakeVoltage);
         m_intaking = true;
     }
 
-    public void runIntakeSlow() { setVoltage(DispenserConstants.kIntakeSlowVoltage); m_intaking = true; }
+    public void runIntakeSlow() {
+        setVoltage(kIntakeSlowVoltage);
+        m_intaking = true;
+    }
 
     @Override
     public void periodic() {
         m_io.updateInputs(m_inputs);
-        Logger.processInputs(DispenserConstants.kIOLogPath, m_inputs);
+        Logger.processInputs(kIOLogPath, m_inputs);
 
         m_sensors.periodic();
     }

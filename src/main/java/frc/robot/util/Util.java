@@ -17,6 +17,15 @@ import java.util.Optional;
 
 @UtilityClass
 public class Util {
+    /**
+     * Decides which branch we should score on
+     *
+     * @param side Left or right side of reef face
+     * @param currentPose Current pose of the robot
+     * @param level Desired reef level
+     *
+     * @return Branch to score on
+     */
     public Optional<ReefBranch> decideAutoScoreBranch(ReefFaceSide side, Pose2d currentPose, ReefLevel level) {
         // First 2 faces should be the faces with the closest base
         ReefFace[] desiredFaces = Arrays.stream(ReefFace.values()).sorted(
@@ -43,8 +52,16 @@ public class Util {
             .findFirst();
     }
 
+    /**
+     * Returns the desired robot pose to score at the provided branch
+     *
+     * @param branch Desired branch to score on
+     *
+     * @return Pose associated with branch
+     */
     public Pose2d getDriveScorePose(ReefBranch branch) {
         Rotation2d angle = branch.getPose().toPose2d().getRotation();
+
         return new Pose2d(
             branch.getPose().toPose2d().getTranslation().plus(
                 new Translation2d(DriveConstants.kAutoScorePoseOffsetMeters, angle)

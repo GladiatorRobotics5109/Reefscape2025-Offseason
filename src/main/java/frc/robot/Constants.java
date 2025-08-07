@@ -13,6 +13,10 @@
 
 package frc.robot;
 
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.RobotBase;
 import frc.robot.generated.TunerConstants;
 import frc.robot.util.Conversions;
@@ -154,5 +158,48 @@ public final class Constants {
         public static final double kIntakeVoltage = 6;
         public static final double kIntakeSlowVoltage = 5;
         public static final double kIntakeSlowSlowVoltage = -1.75;
+    }
+
+    public static final class VisionConstants {
+        // AprilTag layout
+        public static AprilTagFieldLayout kAprilTagLayout = AprilTagFieldLayout.loadField(
+            AprilTagFields.k2025ReefscapeWelded
+        );
+
+        public static final Transform3d kRobotToFrontCamera = new Transform3d(
+            0.031 + Conversions.inchesToMeters(2.78),
+            0.19,
+            0.529 + Conversions.inchesToMeters(2),
+            new Rotation3d(
+                Conversions.degreesToRadians(-10),
+                Conversions.degreesToRadians(33),
+                Conversions.degreesToRadians(-19)
+            )
+        );
+        public static final Transform3d kRobotToRearCamera = new Transform3d(
+            -0.3302 - 0.13,
+            -0.0889 - 0.03,
+            0.51435,
+            new Rotation3d(0.0, Conversions.degreesToRadians(10), Conversions.degreesToRadians(182))
+        );
+        // Basic filtering thresholds
+        public static final double kMaxAmbiguity = 0.3;
+        public static final double kMaxZError = 0.75;
+
+        // Standard deviation baselines, for 1 meter distance and 1 tag
+        // (Adjusted automatically based on distance and # of tags)
+        public static final double kLinearStdDevBaseline = 0.02; // Meters
+        public static final double kAngularStdDevBaseline = 0.06; // Radians
+
+        // Standard deviation multipliers for each camera
+        // (Adjust to trust some cameras more than others)
+        public static final double[] kCameraStdDevFactors = new double[] {
+            1.0, // Camera 0
+            1.0 // Camera 1
+        };
+
+        // Multipliers to apply for MegaTag 2 observations
+        public static final double kLinearStdDevMegatag2Factor = 0.5; // More stable than full 3D solve
+        public static final double kAngularStdDevMegatag2Factor = Double.POSITIVE_INFINITY; // No rotation data available
     }
 }

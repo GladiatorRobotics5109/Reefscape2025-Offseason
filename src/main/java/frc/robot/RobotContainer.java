@@ -14,7 +14,6 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.*;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
@@ -38,6 +37,9 @@ import frc.robot.subsystems.superstructure.elevator.ElevatorIO;
 import frc.robot.subsystems.superstructure.elevator.ElevatorIOSim;
 import frc.robot.subsystems.superstructure.elevator.ElevatorIOSparkMax;
 import frc.robot.subsystems.superstructure.elevator.ElevatorSubsystem;
+import frc.robot.subsystems.vision.VisionSubsystem;
+import frc.robot.subsystems.vision.VisionIO;
+import frc.robot.subsystems.vision.VisionIOPhotonVision;
 import frc.robot.util.FieldConstants;
 import frc.robot.util.FieldConstants.Reef;
 import frc.robot.util.FieldConstants.Reef.ReefBranch;
@@ -60,6 +62,7 @@ public class RobotContainer {
     private final DriveSubsystem m_drive;
     private final ElevatorSubsystem m_elevator;
     private final DispenserSubsystem m_dispenser;
+    private final VisionSubsystem m_vision;
 
     // Controller
     private final CommandPS5Controller m_driverController = new CommandPS5Controller(DriveTeamConstants.kDriverPort);
@@ -95,6 +98,12 @@ public class RobotContainer {
                     )
                 );
 
+                m_vision = new VisionSubsystem(
+                    m_drive::addVisionMeasurement,
+                    new VisionIOPhotonVision("FrontCamera", VisionConstants.kRobotToFrontCamera),
+                    new VisionIOPhotonVision("RearCamera", VisionConstants.kRobotToRearCamera)
+                );
+
                 break;
             case SIM:
                 DriverStation.silenceJoystickConnectionWarning(true);
@@ -112,6 +121,8 @@ public class RobotContainer {
 
                 m_dispenser = new DispenserSubsystem(new DispenserIO() {}, new DispenserSensorsIO() {});
 
+                m_vision = new VisionSubsystem(m_drive::addVisionMeasurement, new VisionIO() {});
+
                 break;
             default:
                 // Replayed robot, disable IO implementations
@@ -126,6 +137,8 @@ public class RobotContainer {
                 m_elevator = new ElevatorSubsystem(new ElevatorIO() {});
 
                 m_dispenser = new DispenserSubsystem(new DispenserIO() {}, new DispenserSensorsIO() {});
+
+                m_vision = new VisionSubsystem(m_drive::addVisionMeasurement, new VisionIO() {});
 
                 break;
         }
@@ -197,6 +210,8 @@ public class RobotContainer {
         m_driverController.triangle().onTrue(ElevatorCommands.toReefLevel(m_elevator, ReefLevel.L3));
         m_driverController.square().onTrue(ElevatorCommands.toReefLevel(m_elevator, ReefLevel.L4));
 
+        // -- Auto Score Binds --
+        // Auto-score select branch
         m_driverController.L2()
             .and(() -> Math.abs(m_driverController.getL2Axis()) >= DriveTeamConstants.kAutoScoreStartStopThreashold)
             .and(this::isReadyToAutoScore)
@@ -217,6 +232,7 @@ public class RobotContainer {
                     m_hasAutoScoreBranch = false;
                 }
             }));
+        // Auto score start
         m_driverController.L2()
             .and(() -> Math.abs(m_driverController.getL2Axis()) >= DriveTeamConstants.kAutoScoreStartStopThreashold)
             .and(this::isReadyToAutoScore)
@@ -226,22 +242,6 @@ public class RobotContainer {
                     .until(() -> m_driverController.getL2Axis() >= DriveTeamConstants.kAutoScoreStartStopThreashold)
                     .finallyDo(() -> m_hasAutoScoreBranch = false)
             );
-
-        // m_driverController.options()
-        //     .and(this::isReadyToAutoScore)
-        //     .and(() -> Math.abs(m_driverController.getLeftX()) >= DriveTeamConstants.kAutoScoreSideSelectionThreshold)
-        //     .onTrue(
-        //         RobotCommands.autoScore(
-        //             () -> Util.decideAutoScoreBranch(
-        //                 ReefFaceSide.fromDouble(m_driverController.getLeftX()),
-        //                 m_drive.getPose(),
-        //                 ReefLevel.L4
-        //             ),
-        //             m_drive,
-        //             m_elevator,
-        //             m_dispenser
-        //         )
-        //     );
 
         // // Lock to 0° when A button is held
         // m_driverController.a().whileTrue(
@@ -277,7 +277,5 @@ public class RobotContainer {
      *
      * @return the command to run in autonomous
      */
-    public Command getAutonomousCommand() {
-        return m_autoChooser.get();
-    }
+    public Command getAutonomousCommand() { return m_autoChooser.get(); }
 }

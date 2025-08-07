@@ -5,7 +5,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import frc.robot.Constants.DispenserConstants;
+import static frc.robot.Constants.DispenserConstants.*;
 
 public class DispenserIOSparkMax implements DispenserIO {
     private final SparkMax m_left;
@@ -16,11 +16,11 @@ public class DispenserIOSparkMax implements DispenserIO {
 
     public DispenserIOSparkMax(int leftPort, int rightPort) {
         SparkMaxConfig config = new SparkMaxConfig();
-        config.smartCurrentLimit((int)DispenserConstants.kSupplyCurrentLimit);
-        config.encoder.positionConversionFactor(1 / DispenserConstants.kGearRatio);
+        config.smartCurrentLimit((int)kSupplyCurrentLimit);
+        config.encoder.positionConversionFactor(1 / kGearRatio);
 
         config.idleMode(IdleMode.kBrake);
-        config.inverted(DispenserConstants.kInvertMotor);
+        config.inverted(kInvertMotor);
 
         m_left = new SparkMax(leftPort, MotorType.kBrushless);
         m_right = new SparkMax(rightPort, MotorType.kBrushless);
