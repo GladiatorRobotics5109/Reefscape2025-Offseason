@@ -30,7 +30,7 @@ import java.util.HashMap;
  * (log replay from a file).
  */
 public final class Constants {
-    public static final Mode kSimMode = Mode.SIM;
+    public static final Mode kSimMode = Mode.REAL;
     public static final Mode kCurrentMode = RobotBase.isReal() ? Mode.REAL : kSimMode;
 
     public static final class DriveTeamConstants {
